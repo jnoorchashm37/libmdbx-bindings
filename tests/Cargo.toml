@@ -1,0 +1,13 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+libmdbx-bindings = { path = "../" }
+serde = { version = "1", features = ["derive"] }
+rkyv = { git = "https://github.com/rkyv/rkyv.git", branch = "0.7-hashbrown-0.14", features = [
+    "validation",
+] }
+# paste = "1.0.14"
