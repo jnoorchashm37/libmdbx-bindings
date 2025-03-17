@@ -1,4 +1,4 @@
-use libmdbx_bindings::Archive;
+// use libmdbx_bindings::Archive;
 use libmdbx_bindings::DbTx;
 use libmdbx_bindings::DbTxMut;
 use libmdbx_bindings::TableSet;
@@ -15,7 +15,7 @@ fn main() {
             100,
             Thing {
                 hi: "to me".to_string(),
-                this: 100.0,
+                this: 1220.0,
             },
         )
     })
@@ -36,7 +36,7 @@ fn main() {
 
 tables!(MyTables, 1, [EmptyStrategyTable]);
 
-db_table!((EmptyStrategyTable) | WRAP_VALUE | u8, Thing);
+db_table!((EmptyStrategyTable) | u8, Thing);
 
 #[derive(
     Default,
@@ -52,6 +52,8 @@ db_table!((EmptyStrategyTable) | WRAP_VALUE | u8, Thing);
     serde::Serialize,
     serde::Deserialize,
 )]
+// #[libmdbx_bindings::derive_libmdbx_value]
+// #[derive(Debug)]
 pub struct Thing {
     hi: String,
     this: f64,

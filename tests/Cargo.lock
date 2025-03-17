@@ -3571,6 +3571,7 @@ dependencies = [
  "libmdbx-bindings",
  "rkyv",
  "serde",
+ "zstd",
 ]
 
 [[package]]

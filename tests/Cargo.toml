@@ -11,3 +11,9 @@ rkyv = { git = "https://github.com/rkyv/rkyv.git", branch = "0.7-hashbrown-0.14"
     "validation",
 ] }
 # paste = "1.0.14"
+zstd = "0.13"
+
+
+[features]
+default = []
+derive = ["libmdbx-bindings/derive"]
