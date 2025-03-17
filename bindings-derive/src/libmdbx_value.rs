@@ -23,8 +23,10 @@ pub fn parse(mut item: DeriveInput) -> syn::Result<TokenStream2> {
 
     // Add additional derives
     let additional_derives: Vec<Path> = vec![
-        parse_quote!(libmdbx_bindings::Serialize),
-        parse_quote!(libmdbx_bindings::Deserialize),
+        parse_quote!(libmdbx_bindings::re_export_rkyv::Serialize),
+        parse_quote!(libmdbx_bindings::re_export_rkyv::Deserialize),
+        parse_quote!(libmdbx_bindings::re_export_serde::Serialize),
+        parse_quote!(libmdbx_bindings::re_export_serde::Deserialize),
         parse_quote!(libmdbx_bindings::Archive),
     ];
 

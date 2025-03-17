@@ -102,60 +102,6 @@ macro_rules! db_table {
             const DUPSORT: bool = false;
         }
 
-        libmdbx_bindings::db_table!(BASIC | $table);
-    };
-
-
-    ( ( $table:ident ) | WRAP_KEY | $key:ty, $value:ty) => {
-        #[doc = concat!("Takes [`", stringify!($key), "`] as a key and returns [`", stringify!($value), "`].")]
-        #[derive(Clone, Copy, Debug, Default)]
-        pub struct $table;
-
-        impl libmdbx_bindings::Table for $table {
-            type Key = libmdbx_bindings::Wrapper<$key>;
-            type Value = $value;
-
-            const NAME: &'static str = stringify!($table);
-            const DUPSORT: bool = false;
-        }
-
-        libmdbx_bindings::db_table!(BASIC | $table);
-    };
-
-    ( ( $table:ident ) | WRAP_VALUE | $key:ty, $value:ty) => {
-        #[doc = concat!("Takes [`", stringify!($key), "`] as a key and returns [`", stringify!($value), "`].")]
-        #[derive(Clone, Copy, Debug, Default)]
-        pub struct $table;
-
-        impl libmdbx_bindings::Table for $table {
-            type Key = $key;
-            type Value = libmdbx_bindings::Wrapper<$value>;
-
-            const NAME: &'static str = stringify!($table);
-            const DUPSORT: bool = false;
-        }
-
-        libmdbx_bindings::db_table!(BASIC | $table);
-    };
-
-    ( ( $table:ident ) | WRAP_KEY_VALUE | $key:ty, $value:ty) => {
-        #[doc = concat!("Takes [`", stringify!($key), "`] as a key and returns [`", stringify!($value), "`].")]
-        #[derive(Clone, Copy, Debug, Default)]
-        pub struct $table;
-
-        impl libmdbx_bindings::Table for $table {
-            type Key = libmdbx_bindings::Wrapper<$key>;
-            type Value = libmdbx_bindings::Wrapper<$value>;
-
-            const NAME: &'static str = stringify!($table);
-            const DUPSORT: bool = false;
-        }
-
-        libmdbx_bindings::db_table!(BASIC | $table);
-    };
-
-
-    (BASIC | $table:ident) => {
         impl std::fmt::Display for $table {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", stringify!($table))
@@ -167,5 +113,5 @@ macro_rules! db_table {
                 libmdbx_bindings::TableType::Table
             }
         }
-    }
+    };
 }

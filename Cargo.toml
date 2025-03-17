@@ -37,3 +37,8 @@ zstd = "0.13"
 paste = "1.0.14"
 bytes = "1.5"
 serde = { version = "1", features = ["derive"] }
+
+
+[features]
+default = ["derive"]
+derive = []

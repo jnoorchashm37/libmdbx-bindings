@@ -7,7 +7,6 @@ pub(crate) mod traits;
 pub(crate) mod codecs;
 
 pub use bytes::BufMut;
-pub use codecs::Wrapper;
 pub use implementation::LibmdbxTx;
 pub use libmdbx_native::{RO, RW};
 pub use provider::LibmdbxProvider;
@@ -18,21 +17,37 @@ pub use reth_db::{
     transaction::{DbTx, DbTxMut},
 };
 
-// pub use traits::{TableDet, TableSet, WrapEncodable, WrapDecodable};
 pub use traits::*;
 
+pub use paste::paste;
+
+#[cfg(feature = "derive")]
 pub use re_exports::*;
+#[cfg(feature = "derive")]
 mod re_exports {
     pub use rkyv::{
-        Archive, Deserialize as Deserialize_rkyv, Serialize as Serialize_rkyv, archived_root,
+        Archive,
+        Infallible, //Serialize as Serialize_rkyv, Deserialize as Deserialize_rkyv,
+        archived_root,
+        to_bytes,
     };
-
-    pub use reth_db_api::table::{Decode, Encode};
 
     pub use alloy_primitives::bytes::BufMut as AlloyBytesMut;
     pub use alloy_rlp::Result as RlpResult;
     pub use alloy_rlp::{Decodable, Encodable};
-    pub use paste::paste;
+    pub use libmdbx_bindings_derive::derive_libmdbx_value;
+
+    pub use reth_db_api::table::{Decode, Encode};
     pub use serde::{Deserialize as Deserialize_serde, Serialize as Serialize_serde};
     pub use zstd::{decode_all, encode_all};
+}
+
+#[cfg(feature = "derive")]
+pub mod re_export_serde {
+    pub use serde::{Deserialize, Serialize};
+}
+
+#[cfg(feature = "derive")]
+pub mod re_export_rkyv {
+    pub use rkyv::{Deserialize, Serialize};
 }

@@ -12,11 +12,9 @@ use reth_db::{
         DbCursorRO, DbCursorRW, DbDupCursorRO, DbDupCursorRW, DupWalker, RangeWalker,
         ReverseWalker, Walker,
     },
-    table::{DupSort, Encode, Key, Table, Value},
+    table::{DupSort, Encode, Table},
 };
 use reth_storage_errors::db::DatabaseWriteError;
-
-use crate::{WrapEncodable, Wrapper};
 
 use super::utils::{decode_one, decode_value, decoder, uncompressable_ref_util};
 
@@ -35,14 +33,10 @@ pub struct LibmdbxCursor<T: Table, K: TransactionKind> {
     /// Inner `libmdbx` cursor.
     pub(crate) inner: libmdbx_native::Cursor<K>,
     /// Phantom data to enforce encoding/decoding.
-    _dbi: PhantomData<Wrapper<T>>,
+    _dbi: PhantomData<T>,
 }
 
-impl<T: Table, K: TransactionKind> LibmdbxCursor<Wrapper<T>, K>
-where
-    Wrapper<<T as Table>::Key>: Key,
-    Wrapper<<T as Table>::Value>: Value,
-{
+impl<T: Table, K: TransactionKind> LibmdbxCursor<T, K> {
     pub(crate) fn new(inner: libmdbx_native::Cursor<K>) -> Self {
         Self {
             inner,
@@ -57,11 +51,7 @@ where
 
 /// Takes `(key, value)` from the database and decodes it appropriately.
 
-impl<T: Table, K: TransactionKind> DbCursorRO<T> for LibmdbxCursor<Wrapper<T>, K>
-where
-    Wrapper<<T as Table>::Key>: Key,
-    Wrapper<<T as Table>::Value>: Value,
-{
+impl<T: Table, K: TransactionKind> DbCursorRO<T> for LibmdbxCursor<T, K> {
     fn first(&mut self) -> PairResult<T> {
         decode!(self.inner.first())
     }
@@ -135,14 +125,7 @@ where
     }
 }
 
-impl<T: DupSort, K: TransactionKind> DbDupCursorRO<T> for LibmdbxCursor<Wrapper<T>, K>
-where
-    T: DupSort,
-    Wrapper<T>: Table,
-    Wrapper<<T as DupSort>::SubKey>: Key,
-    Wrapper<<T as Table>::Key>: Key,
-    Wrapper<<T as Table>::Value>: Value,
-{
+impl<T: DupSort, K: TransactionKind> DbDupCursorRO<T> for LibmdbxCursor<T, K> {
     /// Returns the next `(key, value)` pair of a DUPSORT table.
     fn next_dup(&mut self) -> PairResult<T> {
         decode!(self.inner.next_dup())
@@ -223,11 +206,7 @@ where
     }
 }
 
-impl<T: Table> DbCursorRW<T> for LibmdbxCursor<Wrapper<T>, RW>
-where
-    Wrapper<<T as Table>::Key>: Key,
-    Wrapper<<T as Table>::Value>: Value,
-{
+impl<T: Table> DbCursorRW<T> for LibmdbxCursor<T, RW> {
     /// Database operation that will update an existing row if a specified value
     /// already exists in a table, and insert a new row if the specified
     /// value doesn't already exist

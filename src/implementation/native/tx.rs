@@ -4,14 +4,13 @@ use libmdbx_native::{DatabaseFlags, RO, RW, Transaction, TransactionKind, WriteF
 use parking_lot::RwLock;
 use reth_db::{
     DatabaseError, DatabaseWriteOperation, TableType, Tables,
-    table::{Compress, DupSort, Encode, Key, Table, Value},
+    table::{Compress, DupSort, Encode, Key, Table},
     transaction::{DbTx, DbTxMut},
 };
 use reth_storage_errors::db::DatabaseWriteError;
 
 use super::{cursor::LibmdbxCursor, utils::decode_one};
 use crate::{
-    Wrapper,
     // tables::{NUM_TABLES, Tables},
     implementation::DatabaseEnv,
     traits::{TableDet, TableSet},
@@ -150,18 +149,8 @@ impl<K: TransactionKind, S: TableSet> DbTx for LibmdbxTx<K, S> {
 }
 
 impl<S: TableSet> DbTxMut for LibmdbxTx<RW, S> {
-    type CursorMut<T: Table>
-        = LibmdbxCursor<Wrapper<T>, RW>
-    where
-        T: Table,
-        Wrapper<<T as Table>::Key>: Key,
-        Wrapper<<T as Table>::Value>: Value,
-        // Wrapper<<T as Table>::Value>: Compress;
-    // Wrapper<T>: Table,
-    // Wrapper<<T as DupSort>::SubKey>: Key,
-    // Wrapper<<T as Table>::Key>: Key,
-    // Wrapper<<T as Table>::Value>: Value;
-    type DupCursorMut<T: DupSort> = LibmdbxCursor<Wrapper<T>, RW>;
+    type CursorMut<T: Table> = LibmdbxCursor<T, RW>;
+    type DupCursorMut<T: DupSort> = LibmdbxCursor<T, RW>;
 
     fn put<T: Table>(&self, key: T::Key, value: T::Value) -> Result<(), DatabaseError> {
         let key = key.encode();
