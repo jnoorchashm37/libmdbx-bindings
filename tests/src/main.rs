@@ -1,16 +1,15 @@
 // use libmdbx_bindings::Archive;
 use libmdbx_bindings::DbTx;
 use libmdbx_bindings::DbTxMut;
-use libmdbx_bindings::TableSet;
 use libmdbx_bindings::table_value_codecs_with_zc;
 use libmdbx_bindings::{LibmdbxProvider, db_table, tables};
 // use serde::Deserialize;
 // use serde::Serialize;
 
 fn main() {
-    let db = LibmdbxProvider::init_db::<_, MyTables>("./db-test").unwrap();
+    let db = LibmdbxProvider::<MyTables>::init_db("./db-test").unwrap();
 
-    db.write::<_, _, MyTables>(|txn| {
+    db.write(|txn| {
         txn.put::<EmptyStrategyTable>(
             100,
             Thing {
@@ -23,7 +22,7 @@ fn main() {
     .unwrap();
 
     let out = db
-        .read::<_, _, MyTables>(|txn| txn.get::<EmptyStrategyTable>(100))
+        .read(|txn| txn.get::<EmptyStrategyTable>(100))
         .unwrap()
         .unwrap()
         .unwrap();

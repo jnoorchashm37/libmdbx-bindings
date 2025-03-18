@@ -1,7 +1,7 @@
 // #![allow(non_camel_case_types)]
 #![allow(private_bounds)]
 
-use std::{ffi::c_int, path::Path};
+use std::{ffi::c_int, marker::PhantomData, path::Path};
 
 use eyre::Context;
 use libmdbx_native::{RO, RW};
@@ -20,7 +20,7 @@ use crate::{
 const GIGABYTE: u64 = 1024 * 1024 * 1024;
 
 #[derive(Debug)]
-pub struct LibmdbxProvider(DatabaseEnv);
+pub struct LibmdbxProvider<S>(DatabaseEnv, PhantomData<S>);
 
 #[inline]
 pub(crate) fn mdbx_result(err_code: c_int) -> eyre::Result<bool> {
@@ -31,10 +31,10 @@ pub(crate) fn mdbx_result(err_code: c_int) -> eyre::Result<bool> {
     }
 }
 
-impl LibmdbxProvider {
+impl<S: TableSet> LibmdbxProvider<S> {
     /// Opens up an existing database or creates a new one at the specified
     /// path. Creates tables if necessary. Opens in read/write mode.
-    pub fn init_db<P: AsRef<Path>, S: TableSet>(path: P) -> eyre::Result<Self> {
+    pub fn init_db<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
         let rpath = path.as_ref();
         if is_database_empty(rpath) {
             std::fs::create_dir_all(rpath).wrap_err_with(|| {
@@ -63,14 +63,14 @@ impl LibmdbxProvider {
             ))
         })?;
 
-        let this = Self(db);
-        this.create_tables::<S>()?;
+        let this = Self(db, PhantomData);
+        this.create_tables()?;
 
         Ok(this)
     }
 
     /// Creates all the defined tables, opens if already created
-    fn create_tables<S: TableSet>(&self) -> Result<(), DatabaseError> {
+    fn create_tables(&self) -> Result<(), DatabaseError> {
         let tx = LibmdbxTx::new_rw_tx(&self.0)?;
         S::create_tables(&tx)?;
 
@@ -81,7 +81,7 @@ impl LibmdbxProvider {
 
     /// Takes a function and passes a RW transaction
     /// makes sure it's committed at the end of execution
-    pub fn write<F, R, S: TableSet>(&self, f: F) -> Result<R, DatabaseError>
+    pub fn write<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
         F: FnOnce(&LibmdbxTx<RW, S>) -> R,
     {
@@ -92,7 +92,7 @@ impl LibmdbxProvider {
         Ok(res)
     }
 
-    pub fn read<F, R, S: TableSet>(&self, f: F) -> Result<R, DatabaseError>
+    pub fn read<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
         F: FnOnce(&LibmdbxTx<RO, S>) -> R,
     {
@@ -104,14 +104,14 @@ impl LibmdbxProvider {
     }
 
     /// returns a RO transaction
-    fn ro_tx<S: TableSet>(&self) -> Result<LibmdbxTx<RO, S>, DatabaseError> {
+    fn ro_tx(&self) -> Result<LibmdbxTx<RO, S>, DatabaseError> {
         let tx = LibmdbxTx::new_ro_tx(&self.0)?;
 
         Ok(tx)
     }
 
     /// returns a RW transaction
-    fn rw_tx<S: TableSet>(&self) -> Result<LibmdbxTx<RW, S>, DatabaseError> {
+    fn rw_tx(&self) -> Result<LibmdbxTx<RW, S>, DatabaseError> {
         let tx = LibmdbxTx::new_rw_tx(&self.0)?;
 
         Ok(tx)
