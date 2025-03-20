@@ -14,6 +14,7 @@ pub use reth_db::table::Table;
 pub use reth_db::table::{Compress, Decompress};
 pub use reth_db::{
     DatabaseError, TableType,
+    cursor::{DbCursorRO, DbCursorRW},
     transaction::{DbTx, DbTxMut},
 };
 
