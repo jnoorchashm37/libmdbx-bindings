@@ -92,12 +92,36 @@ impl<S: TableSet> LibmdbxProvider<S> {
         Ok(res)
     }
 
+    /// Takes an async function and passes a RW transaction
+    /// makes sure it's committed at the end of execution
+    pub async fn write_async<F, R>(&self, f: F) -> Result<R, DatabaseError>
+    where
+        F: AsyncFnOnce(&LibmdbxTx<RW, S>) -> R,
+    {
+        let tx = self.rw_tx()?;
+        let res = f(&tx).await;
+        tx.commit()?;
+
+        Ok(res)
+    }
+
     pub fn read<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
         F: FnOnce(&LibmdbxTx<RO, S>) -> R,
     {
         let tx = self.ro_tx()?;
         let res = f(&tx);
+        tx.commit()?;
+
+        Ok(res)
+    }
+
+    pub async fn read_async<F, R>(&self, f: F) -> Result<R, DatabaseError>
+    where
+        F: AsyncFnOnce(&LibmdbxTx<RO, S>) -> R,
+    {
+        let tx = self.ro_tx()?;
+        let res = f(&tx).await;
         tx.commit()?;
 
         Ok(res)
