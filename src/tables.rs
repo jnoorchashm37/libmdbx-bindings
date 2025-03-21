@@ -1,5 +1,18 @@
 #[macro_export]
 macro_rules! tables {
+    ([$($derives:path),*] => $set_name:ident, $num_tables:expr, [$($table:ident),*]) => {
+        #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash, $($derives),*)]
+        #[repr(u8)]
+        /// Default tables that should be present inside database.
+        pub enum $set_name {
+            $(
+                #[doc = concat!("Represents a ", stringify!($table), " table")]
+                $table,
+            )*
+        }
+        tables!(PRIVATE | $set_name, $num_tables, [$($table),*]);
+    };
+
     ($set_name:ident, $num_tables:expr, [$($table:ident),*]) => {
         #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
         #[repr(u8)]
@@ -10,7 +23,10 @@ macro_rules! tables {
                 $table,
             )*
         }
+        tables!(PRIVATE | $set_name, $num_tables, [$($table),*]);
+    };
 
+    (PRIVATE | $set_name:ident, $num_tables:expr, [$($table:ident),*]) => {
         impl $set_name {
             /// Array of all tables in database
             pub const ALL: [$set_name; $num_tables] = [$($set_name::$table,)*];
