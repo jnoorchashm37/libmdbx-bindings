@@ -51,7 +51,7 @@ macro_rules! tables {
 
             fn create_table(
                 &self,
-                txn: &libmdbx_bindings::LibmdbxTx<libmdbx_bindings::RW, Self>
+                txn: &libmdbx_bindings::LibmdbxTx<libmdbx_bindings::RW>
             ) -> Result<(), libmdbx_bindings::DatabaseError> {
 
                 match self {
@@ -87,7 +87,7 @@ macro_rules! tables {
             const NUM_TABLES: usize = $num_tables;
 
             fn create_tables(
-                txn: &libmdbx_bindings::LibmdbxTx<libmdbx_bindings::RW, Self>
+                txn: &libmdbx_bindings::LibmdbxTx<libmdbx_bindings::RW>
             ) -> Result<(), libmdbx_bindings::DatabaseError> {
 
                 for table in Self::ALL {

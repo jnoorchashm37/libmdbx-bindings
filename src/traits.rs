@@ -3,14 +3,14 @@ use std::str::FromStr;
 
 use bytes::BufMut;
 use libmdbx_native::RW;
-use reth_db::{DatabaseError, TableType, table::Table};
+use reth_db::{DatabaseError, TableType};
 
 use crate::implementation::LibmdbxTx;
 
 pub trait TableSet: Send + Sync + Sized + FromStr<Err = String> {
     const NUM_TABLES: usize;
 
-    fn create_tables(txn: &LibmdbxTx<RW, Self>) -> Result<(), DatabaseError>;
+    fn create_tables(txn: &LibmdbxTx<RW>) -> Result<(), DatabaseError>;
 
     fn as_usize(&self) -> usize;
 }

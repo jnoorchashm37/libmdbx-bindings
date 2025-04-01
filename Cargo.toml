@@ -8,7 +8,7 @@ name = "libmdbx_bindings"
 
 
 [dependencies]
-libmdbx-native = { path = "./libmdbx" }
+libmdbx-native = { path = "./libmdbx", features = ["read-tx-timeouts"] }
 libmdbx-bindings-derive = { path = "./bindings-derive" }
 
 # alloy

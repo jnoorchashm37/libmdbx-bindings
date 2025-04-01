@@ -83,7 +83,7 @@ impl<S: TableSet> LibmdbxProvider<S> {
     /// makes sure it's committed at the end of execution
     pub fn write<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
-        F: FnOnce(&LibmdbxTx<RW, S>) -> R,
+        F: FnOnce(&LibmdbxTx<RW>) -> R,
     {
         let tx = self.rw_tx()?;
         let res = f(&tx);
@@ -96,7 +96,7 @@ impl<S: TableSet> LibmdbxProvider<S> {
     /// makes sure it's committed at the end of execution
     pub async fn write_async<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
-        F: AsyncFnOnce(&LibmdbxTx<RW, S>) -> R,
+        F: AsyncFnOnce(&LibmdbxTx<RW>) -> R,
     {
         let tx = self.rw_tx()?;
         let res = f(&tx).await;
@@ -107,7 +107,7 @@ impl<S: TableSet> LibmdbxProvider<S> {
 
     pub fn read<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
-        F: FnOnce(&LibmdbxTx<RO, S>) -> R,
+        F: FnOnce(&LibmdbxTx<RO>) -> R,
     {
         let tx = self.ro_tx()?;
         let res = f(&tx);
@@ -118,7 +118,7 @@ impl<S: TableSet> LibmdbxProvider<S> {
 
     pub async fn read_async<F, R>(&self, f: F) -> Result<R, DatabaseError>
     where
-        F: AsyncFnOnce(&LibmdbxTx<RO, S>) -> R,
+        F: AsyncFnOnce(&LibmdbxTx<RO>) -> R,
     {
         let tx = self.ro_tx()?;
         let res = f(&tx).await;
@@ -128,14 +128,14 @@ impl<S: TableSet> LibmdbxProvider<S> {
     }
 
     /// returns a RO transaction
-    fn ro_tx(&self) -> Result<LibmdbxTx<RO, S>, DatabaseError> {
+    fn ro_tx(&self) -> Result<LibmdbxTx<RO>, DatabaseError> {
         let tx = LibmdbxTx::new_ro_tx(&self.0)?;
 
         Ok(tx)
     }
 
     /// returns a RW transaction
-    fn rw_tx(&self) -> Result<LibmdbxTx<RW, S>, DatabaseError> {
+    fn rw_tx(&self) -> Result<LibmdbxTx<RW>, DatabaseError> {
         let tx = LibmdbxTx::new_rw_tx(&self.0)?;
 
         Ok(tx)

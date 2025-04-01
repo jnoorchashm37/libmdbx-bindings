@@ -1,12 +1,13 @@
-use std::{marker::PhantomData, str::FromStr, sync::Arc};
+use std::{fmt::Debug, marker::PhantomData, str::FromStr, sync::Arc};
 
-use libmdbx_native::{DatabaseFlags, RO, RW, Transaction, TransactionKind, WriteFlags, ffi::DBI};
+use libmdbx_native::{DatabaseFlags, RO, RW, Transaction, TransactionKind, WriteFlags};
 use parking_lot::RwLock;
 use reth_db::{
     DatabaseError, DatabaseWriteOperation, TableType, Tables,
-    table::{Compress, DupSort, Encode, Key, Table},
+    table::{Compress, DupSort, Encode, Key, Table, TableImporter},
     transaction::{DbTx, DbTxMut},
 };
+use reth_mdbx_sys::MDBX_dbi;
 use reth_storage_errors::db::DatabaseWriteError;
 
 use super::{cursor::LibmdbxCursor, utils::decode_one};
@@ -16,29 +17,28 @@ use crate::{
     traits::{TableDet, TableSet},
 };
 
-pub struct LibmdbxTx<K: TransactionKind, S: TableSet> {
+#[derive(Debug)]
+pub struct LibmdbxTx<K: TransactionKind> {
     /// Libmdbx-sys transaction.
     inner: Transaction<K>,
-    /// Database table handle cache.
-    db_handles: Arc<RwLock<Vec<Option<DBI>>>>,
+    // /// Database table handle cache.
+    // db_handles: Arc<RwLock<Vec<Option<DBI>>>>,
     // db_handles_len: usize,
-    _phantom: PhantomData<S>,
 }
 
-impl<S: TableSet> LibmdbxTx<RO, S> {
-    pub(crate) fn new_ro_tx(env: &DatabaseEnv) -> eyre::Result<LibmdbxTx<RO, S>, DatabaseError> {
+impl LibmdbxTx<RO> {
+    pub(crate) fn new_ro_tx(env: &DatabaseEnv) -> eyre::Result<LibmdbxTx<RO>, DatabaseError> {
         Ok(Self {
             inner: env
                 .begin_ro_txn()
                 .map_err(|e| DatabaseError::InitTx(e.into()))?,
-            db_handles: Arc::new(RwLock::new(vec![None; S::NUM_TABLES])),
+            // db_handles: Arc::new(RwLock::new(vec![None; S::NUM_TABLES])),
             // db_handles_len: S::NUM_TABLES,
-            _phantom: PhantomData,
         })
     }
 }
 
-impl<S: TableSet> LibmdbxTx<RW, S> {
+impl LibmdbxTx<RW> {
     pub fn create_table<T: TableDet>(&self, table: &T) -> Result<(), DatabaseError> {
         let flags = match table.table_type() {
             TableType::Table => DatabaseFlags::default(),
@@ -52,35 +52,23 @@ impl<S: TableSet> LibmdbxTx<RW, S> {
         Ok(())
     }
 
-    pub(crate) fn new_rw_tx(env: &DatabaseEnv) -> Result<LibmdbxTx<RW, S>, DatabaseError> {
+    pub(crate) fn new_rw_tx(env: &DatabaseEnv) -> Result<LibmdbxTx<RW>, DatabaseError> {
         Ok(Self {
             inner: env
                 .begin_rw_txn()
                 .map_err(|e| DatabaseError::InitTx(e.into()))?,
-            db_handles: Arc::new(RwLock::new(vec![None; S::NUM_TABLES])),
-            _phantom: PhantomData,
+            // db_handles: Arc::new(RwLock::new(vec![None; S::NUM_TABLES])),
         })
     }
 }
 
-impl<K: TransactionKind, S: TableSet> LibmdbxTx<K, S> {
+impl<K: TransactionKind> LibmdbxTx<K> {
     /// Gets a table database handle if it exists, otherwise creates it.
-    pub(crate) fn get_dbi<T: Table>(&self) -> Result<DBI, DatabaseError> {
-        let mut handles = self.db_handles.write();
-
-        let table = S::from_str(T::NAME).expect("Requested table should be part of `Tables`.");
-
-        let dbi_handle = handles.get_mut(table.as_usize()).expect("should exist");
-        if dbi_handle.is_none() {
-            *dbi_handle = Some(
-                self.inner
-                    .open_db(Some(T::NAME))
-                    .map_err(|e| DatabaseError::InitCursor(e.into()))?
-                    .dbi(),
-            );
-        }
-
-        Ok(dbi_handle.expect("is some; qed"))
+    pub(crate) fn get_dbi<T: Table>(&self) -> Result<MDBX_dbi, DatabaseError> {
+        self.inner
+            .open_db(Some(T::NAME))
+            .map(|db| db.dbi())
+            .map_err(|e| DatabaseError::Open(e.into()))
     }
 
     /// Create db Cursor
@@ -94,7 +82,7 @@ impl<K: TransactionKind, S: TableSet> LibmdbxTx<K, S> {
     }
 }
 
-impl<K: TransactionKind, S: TableSet> DbTx for LibmdbxTx<K, S> {
+impl<K: TransactionKind> DbTx for LibmdbxTx<K> {
     type Cursor<T: Table> = LibmdbxCursor<T, K>;
     type DupCursor<T: DupSort> = LibmdbxCursor<T, K>;
 
@@ -148,7 +136,7 @@ impl<K: TransactionKind, S: TableSet> DbTx for LibmdbxTx<K, S> {
     }
 }
 
-impl<S: TableSet> DbTxMut for LibmdbxTx<RW, S> {
+impl DbTxMut for LibmdbxTx<RW> {
     type CursorMut<T: Table> = LibmdbxCursor<T, RW>;
     type DupCursorMut<T: DupSort> = LibmdbxCursor<T, RW>;
 
@@ -206,3 +194,5 @@ impl<S: TableSet> DbTxMut for LibmdbxTx<RW, S> {
         self.new_cursor::<T>()
     }
 }
+
+impl TableImporter for LibmdbxTx<RW> {}
