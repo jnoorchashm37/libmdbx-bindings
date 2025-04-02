@@ -198,6 +198,9 @@ macro_rules! table_key_codecs_with_zc {
         impl libmdbx_bindings::WrapEncode for $table_value {}
         impl libmdbx_bindings::WrapDecode for $table_value {}
 
+        impl libmdbx_bindings::WrapEncodable for $table_value {}
+        impl libmdbx_bindings::WrapDecodable for $table_value {}
+
         impl libmdbx_bindings::Encode for $table_value {
             type Encoded = Vec<u8>;
 
